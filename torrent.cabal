@@ -15,3 +15,4 @@ executable torrent
   hs-source-dirs:    src
   main-is:           Main.hs
   build-depends:     base ==4.6.*
+                   , parsec ==3.1.*
