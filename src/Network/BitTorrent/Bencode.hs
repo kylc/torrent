@@ -1,4 +1,9 @@
-module Network.BitTorrent.Bencode where
+module Network.BitTorrent.Bencode
+    ( Bencode(..)
+    , parseBencodeFile
+    ) where
+
+import qualified Data.Map as Map
 
 import Text.Parsec
 import Text.Parsec.ByteString (Parser, parseFromFile)
