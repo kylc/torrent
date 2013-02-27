@@ -11,7 +11,7 @@ import Text.Parsec.ByteString (Parser, parseFromFile)
 data Bencode = BInt Integer
              | BString String
              | BList [Bencode]
-             | BDict [(String, Bencode)]
+             | BDict (Map.Map String Bencode)
              deriving (Show, Eq)
 
 parseBencodeFile :: String -> IO (Either ParseError Bencode)
@@ -47,7 +47,7 @@ bDict = do
     char 'd'
     xs <- many elem
     char 'e'
-    return $ BDict xs
+    return $ BDict (Map.fromList xs)
   where
     elem :: Parser (String, Bencode)
     elem = do
