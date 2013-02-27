@@ -12,7 +12,16 @@ data Bencode = BInt Integer
              | BString String
              | BList [Bencode]
              | BDict (Map.Map String Bencode)
-             deriving (Show, Eq)
+             deriving (Eq)
+
+instance Show Bencode where
+    show (BInt i) = "i" ++ show i ++ "e"
+    show (BString s) = show (length s) ++ ":" ++ s
+    show (BList xs) = "l" ++ concatMap show xs ++ "e"
+    show (BDict m) = "d" ++ showElems m ++ "e"
+      where
+        showElems = Map.foldrWithKey showElem ""
+        showElem k v z = k ++ show v ++ z
 
 parseBencodeFile :: String -> IO (Either ParseError Bencode)
 parseBencodeFile = parseFromFile bencode
