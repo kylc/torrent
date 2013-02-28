@@ -3,9 +3,10 @@ module Network.BitTorrent.Bencode
     , parseBencodeFile
     ) where
 
+import Control.Applicative hiding (many, optional)
 import qualified Data.Map as Map
 
-import Text.Parsec
+import Text.Parsec hiding ((<|>))
 import Text.Parsec.ByteString (Parser, parseFromFile)
 
 data Bencode = BInt Integer
@@ -33,9 +34,7 @@ bencode = bInt
       <|> bDict
 
 bInt :: Parser Bencode
-bInt = do
-    n <- between (string "i") (string "e") (number)
-    return $ BInt n
+bInt = BInt <$> (char 'i' *> number <* char 'e')
 
 bString :: Parser Bencode
 bString = do
@@ -45,26 +44,14 @@ bString = do
     return $ BString str
 
 bList :: Parser Bencode
-bList = do
-    char 'l'
-    xs <- many bencode
-    char 'e'
-    return $ BList xs
+bList = BList <$> (char 'l' *> many bencode <* char 'e')
 
 bDict :: Parser Bencode
-bDict = do
-    char 'd'
-    xs <- many elem
-    char 'e'
-    return $ BDict (Map.fromList xs)
-  where
-    elem :: Parser (String, Bencode)
-    elem = do
-      (BString key) <- bString
-      val <- bencode
-      return $ (key, val)
+bDict = (BDict . Map.fromList) <$> (char 'd' *> many elem <* char 'e')
+  where elem = do
+          (BString key) <- bString
+          val <- bencode
+          return $ (key, val)
 
 number :: Parser Integer
-number = do
-  n <- many1 digit
-  return $ read n
+number = read <$> many1 digit
