@@ -1,10 +1,13 @@
 module BitTorrent.Core where
 
+import Control.Concurrent
+import Control.Monad
 import Data.Maybe
 import qualified Data.Map as Map
 
 import BitTorrent.Bencode
 import BitTorrent.Metainfo
+import BitTorrent.PeerManager
 import BitTorrent.Tracker
 import BitTorrent.Types
 
@@ -33,10 +36,12 @@ run f = do
             case resp of
                 Left re -> fail $ show re
                 Right resp -> do
-                  print resp
+                    forkIO . runPeerMgr $ resPeers resp
 
     -- Connect to peers
 
     -- Download!
+    forever $ do
+        threadDelay $ 1000000 * 1 -- 1 second
 
     return ()
