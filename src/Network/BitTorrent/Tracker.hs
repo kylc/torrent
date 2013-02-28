@@ -1,9 +1,5 @@
 module Network.BitTorrent.Tracker
-    ( TrackerRequest(..)
-    , TrackerResponse(..)
-    , Peer(..)
-    , Event(..)
-    , request
+    ( request
     ) where
 
 import Data.Bits
