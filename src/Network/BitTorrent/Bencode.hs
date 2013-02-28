@@ -1,10 +1,12 @@
 module Network.BitTorrent.Bencode
     ( Bencode(..)
+    , parseBencode
     , parseBencodeFile
     ) where
 
 import Control.Applicative hiding (many, optional)
 import qualified Data.Map as Map
+import qualified Data.ByteString.Char8 as B
 
 import Text.Parsec hiding ((<|>))
 import Text.Parsec.ByteString (Parser, parseFromFile)
@@ -23,6 +25,9 @@ instance Show Bencode where
       where
         showElems = Map.foldrWithKey showElem ""
         showElem k v z = show (BString k) ++ show v ++ z
+
+parseBencode :: String -> Either ParseError Bencode
+parseBencode = parse bencode "" . B.pack
 
 parseBencodeFile :: String -> IO (Either ParseError Bencode)
 parseBencodeFile = parseFromFile bencode
