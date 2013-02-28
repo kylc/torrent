@@ -20,3 +20,4 @@ executable torrent
                    , cryptohash
                    , bytestring
                    , HTTP
+                   , network
