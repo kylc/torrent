@@ -17,3 +17,4 @@ executable torrent
   build-depends:     base ==4.6.*
                    , parsec ==3.1.*
                    , containers
+                   , cryptohash
