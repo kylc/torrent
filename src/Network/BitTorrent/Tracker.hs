@@ -17,39 +17,7 @@ import Network.HTTP
 
 import Network.BitTorrent.Bencode
 import Network.BitTorrent.Metainfo
-
-data TrackerRequest = TrackerRequest {
-    reqAnnounce :: String
-  , reqInfoHash :: String
-  , reqPeerId :: String
-  , reqIp :: String
-  , reqPort :: Int
-  , reqUploaded :: Int
-  , reqDownloaded :: Int
-  , reqLeft :: Int
-  , reqEvent :: Event
-  , reqCompact :: Int
-  } deriving (Eq, Show)
-
-data TrackerResponse = TrackerResponse {
-    resInterval :: Int
-  , resPeers :: [Peer]
-  } deriving (Eq, Show)
-
-data Peer = Peer {
-    peerId :: String
-  , peerIp :: String
-  , peerPort :: Int
-  } deriving (Eq, Show)
-
-data Event = Started | Completed | Stopped | Empty
-    deriving (Eq)
-
-instance Show Event where
-    show Started = "started"
-    show Completed = "completed"
-    show Stopped = "stopped"
-    show Empty = "empty"
+import Network.BitTorrent.Types
 
 request :: TrackerRequest -> IO (Either String TrackerResponse)
 request req = do
