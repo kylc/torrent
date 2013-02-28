@@ -22,7 +22,7 @@ instance Show Bencode where
     show (BDict m) = "d" ++ showElems m ++ "e"
       where
         showElems = Map.foldrWithKey showElem ""
-        showElem k v z = (show $ BString k) ++ show v ++ z
+        showElem k v z = show (BString k) ++ show v ++ z
 
 parseBencodeFile :: String -> IO (Either ParseError Bencode)
 parseBencodeFile = parseFromFile bencode
@@ -51,7 +51,7 @@ bDict = (BDict . Map.fromList) <$> (char 'd' *> many elem <* char 'e')
   where elem = do
           (BString key) <- bString
           val <- bencode
-          return $ (key, val)
+          return (key, val)
 
 number :: Parser Integer
 number = read <$> many1 digit
