@@ -33,3 +33,13 @@ data Peer = Peer {
   , peerPort :: Int
   } deriving (Eq, Show)
 
+-- TODO: Fill these in
+data Message = Choke
+             | Unchoke
+             | Interested
+             | NotInterested
+             | Have
+             | BitField
+             | Request
+             | Piece
+             | Cancel
