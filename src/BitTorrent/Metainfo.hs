@@ -1,4 +1,4 @@
-module Network.BitTorrent.Metainfo
+module BitTorrent.Metainfo
     ( announce
     , info
     , hash
@@ -8,7 +8,7 @@ import qualified Crypto.Hash.SHA1 as SHA1
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map as Map
 
-import Network.BitTorrent.Bencode
+import BitTorrent.Bencode
 
 announce :: Bencode -> Maybe String
 announce (BDict d) = do

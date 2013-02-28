@@ -1,4 +1,4 @@
-module Network.BitTorrent.Bencode
+module BitTorrent.Bencode
     ( Bencode(..)
     , parseBencode
     , parseBencodeFile

@@ -1,4 +1,4 @@
-module Network.BitTorrent.Tracker
+module BitTorrent.Tracker
     ( request
     ) where
 
@@ -11,9 +11,9 @@ import qualified Data.Map as Map
 import Data.Word
 import Network.HTTP
 
-import Network.BitTorrent.Bencode
-import Network.BitTorrent.Metainfo
-import Network.BitTorrent.Types
+import BitTorrent.Bencode
+import BitTorrent.Metainfo
+import BitTorrent.Types
 
 request :: TrackerRequest -> IO (Either String TrackerResponse)
 request req = do

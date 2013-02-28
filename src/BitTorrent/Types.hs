@@ -1,4 +1,4 @@
-module Network.BitTorrent.Types where
+module BitTorrent.Types where
 
 data TrackerRequest = TrackerRequest {
     reqAnnounce :: String
