@@ -18,3 +18,5 @@ executable torrent
                    , parsec ==3.1.*
                    , containers
                    , cryptohash
+                   , bytestring
+                   , HTTP
