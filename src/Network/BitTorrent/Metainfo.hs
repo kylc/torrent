@@ -12,14 +12,18 @@ import Network.BitTorrent.Bencode
 
 announce :: Bencode -> Maybe String
 announce (BDict d) = do
-    (BString s) <- Map.lookup "announce" d
-    return s
+    l <- Map.lookup "announce" d
+    case l of
+        (BString s) -> Just s
+        _ -> Nothing
 announce _ = fail "Expected dictionary"
 
 info :: Bencode -> Maybe (Map.Map String Bencode)
 info (BDict d) = do
-    (BDict i) <- Map.lookup "info" d
-    return i
+    l <- Map.lookup "info" d
+    case l of
+        (BDict i) -> Just i
+        _ -> Nothing
 info _ = fail "Expected dictionary"
 
 hash :: Bencode -> String
