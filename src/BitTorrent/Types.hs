@@ -1,5 +1,7 @@
 module BitTorrent.Types where
 
+import Data.Word
+
 data TrackerRequest = TrackerRequest {
     reqAnnounce :: String
   , reqInfoHash :: String
@@ -29,8 +31,8 @@ instance Show Event where
 
 data Peer = Peer {
     peerId :: String
-  , peerIp :: String
-  , peerPort :: Int
+  , peerIp :: Word32
+  , peerPort :: Word16
   } deriving (Eq, Show)
 
 -- TODO: Fill these in

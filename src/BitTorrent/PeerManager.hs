@@ -3,6 +3,7 @@ module BitTorrent.PeerManager where
 import Control.Concurrent
 import Control.Monad
 import Network
+import Network.Socket
 
 import BitTorrent.Types
 
@@ -18,5 +19,15 @@ runPeerMgr ps = do
 
 runPeer :: Peer -> IO ()
 runPeer p = do
-    h <- connectTo (peerIp p) (PortNumber . fromIntegral $ peerPort p)
-    print h
+    putStrLn $ "Connecting to " ++ show p
+
+    let addr = SockAddrInet (PortNum . fromIntegral $ peerPort p) (peerIp p)
+    sock <- socket AF_INET Stream defaultProtocol
+    connect sock addr
+    handshake sock
+    str <- recv sock 1
+
+    return ()
+
+handshake :: Socket -> IO Int
+handshake s = send s "19BitTorrent protocol00000000123456789123456789012345678901234567890"

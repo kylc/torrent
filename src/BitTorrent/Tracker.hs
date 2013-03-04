@@ -53,8 +53,8 @@ decodePeers bs | B.length bs < 6 = []
                | otherwise =
                    let (ip, r0) = B.splitAt 4 bs
                        (port, r1) = B.splitAt 2 r0
-                       ip' = intercalate "." $ map show $ B.unpack ip
-                       port' = roll $ B.unpack port
+                       ip' = fromIntegral . roll $ B.unpack ip
+                       port' = fromIntegral . roll $ B.unpack port
                    in  Peer "test123" ip' port' : decodePeers r1
 
 roll :: [Word8] -> Int

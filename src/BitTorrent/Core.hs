@@ -19,7 +19,7 @@ run f = do
         Left pe -> fail $ show pe
         Right root -> do
             -- Request tracker information
-            let infodict = fromMaybe (Map.empty) $ info root
+            let infodict = fromMaybe Map.empty $ info root
                 req = TrackerRequest {
                           reqAnnounce = fromMaybe "" $ announce root
                         , reqInfoHash = hash $ BDict infodict
@@ -35,13 +35,11 @@ run f = do
             resp <- request req
             case resp of
                 Left re -> fail $ show re
-                Right resp -> do
-                    forkIO . runPeerMgr $ resPeers resp
+                Right resp -> forkIO . runPeerMgr $ resPeers resp
 
     -- Connect to peers
 
     -- Download!
-    forever $ do
-        threadDelay $ 1000000 * 1 -- 1 second
+    forever $ threadDelay $ 1000000 * 1 -- 1 second
 
     return ()
