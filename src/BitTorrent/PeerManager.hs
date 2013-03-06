@@ -3,9 +3,13 @@ module BitTorrent.PeerManager where
 import Control.Concurrent
 import Control.Monad
 import Control.Monad.State
+import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as B8
+import Data.Char (ord)
 import Data.Word
 import Network
-import Network.Socket
+import Network.Socket hiding (send, sendTo, recv, recvFrom)
+import Network.Socket.ByteString
 
 import BitTorrent.Types
 
@@ -27,24 +31,24 @@ defaultState = PeerState { peerSocket = Nothing
                          , peerAmInterested = False
                          }
 
-runPeerMgr :: [Peer] -> IO ()
-runPeerMgr ps = do
+runPeerMgr :: Metainfo -> [Peer] -> IO ()
+runPeerMgr m ps = do
     -- Open connections
-    forM_ ps $ \p -> forkIO $
-        void $ execStateT (runPeer p) defaultState
+    forM_ ps $ \p -> forkIO $ do
+        void $ execStateT (runPeer m p) defaultState
 
     -- Loop until download finishes, computing interests
     forever $ do
         putStrLn "Tick"
         threadDelay $ 1000000 * 1 -- 1 second
 
-runPeer :: Peer -> PeerM ()
-runPeer p = do
+runPeer :: Metainfo -> Peer -> PeerM ()
+runPeer m p = do
     liftIO $ putStrLn $ "Connecting to " ++ show p
 
     peerConnect (peerIp p) (peerPort p)
-    peerHandshake
-    -- str <- recv sock 1
+    peerHandshake $ mtInfoHash m
+    peerListen
 
     return ()
 
@@ -56,9 +60,26 @@ peerConnect a p = do
   where
     addr a p = SockAddrInet (PortNum . fromIntegral $ p) a
 
-peerHandshake :: PeerM ()
-peerHandshake = do
+peerHandshake :: String -> PeerM ()
+peerHandshake ih = do
     sock <- fmap peerSocket get
     case sock of
-        Just s -> void . liftIO $ send s "19BitTorrent protocol00000000123456789123456789012345678901234567890"
+        Just s -> void . liftIO $ send s $
+            B.concat $ map B.pack [ [protoHeaderSize]
+                                  , map (fromIntegral . ord) protoHeader
+                                  , protoReserved
+                                  , map (fromIntegral . ord) ih
+                                  , map (fromIntegral . ord) protoPeerId ]
         Nothing -> fail "[handshake] Peer not yet connected."
+  where
+    protoHeaderSize = fromIntegral . length $ protoHeader
+    protoHeader = "BitTorrent protocol"
+    protoReserved = replicate 8 0
+    protoPeerId = "-HT0001-asdefghjasdh"
+
+peerListen :: PeerM ()
+peerListen = do
+    (Just sock) <- fmap peerSocket get
+    forever $ do
+        d <- liftIO $ recv sock 4096
+        unless (B.null d) (liftIO $ print d)

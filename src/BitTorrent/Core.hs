@@ -35,7 +35,7 @@ run f = do
             resp <- request req
             case resp of
                 Left re -> fail $ show re
-                Right resp -> forkIO . runPeerMgr $ resPeers resp
+                Right resp -> forkIO . runPeerMgr metainfo $ resPeers resp
 
     -- Connect to peers
 
