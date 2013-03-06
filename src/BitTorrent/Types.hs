@@ -2,6 +2,23 @@ module BitTorrent.Types where
 
 import Data.Word
 
+type Hash = String
+
+data Metainfo = Metainfo {
+    mtAnnounce :: String
+  , mtInfoHash :: String
+  , mtName :: String
+  , mtPieceLen :: Integer
+  , mtPieces :: [Hash]
+  , mtLength :: Maybe Integer
+  , mtFiles :: Maybe [MetainfoFile]
+  }
+
+data MetainfoFile = MetainfoFile {
+    mtfLength :: Integer
+  , mtfPath :: String
+  }
+
 data TrackerRequest = TrackerRequest {
     reqAnnounce :: String
   , reqInfoHash :: String

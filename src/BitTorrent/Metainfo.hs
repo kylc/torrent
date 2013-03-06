@@ -11,23 +11,8 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.Map as Map
 
 import BitTorrent.Bencode
+import BitTorrent.Types
 
-type Hash = String
-
-data Metainfo = Metainfo {
-    mtAnnounce :: String
-  , mtInfoHash :: String
-  , mtName :: String
-  , mtPieceLen :: Integer
-  , mtPieces :: [Hash]
-  , mtLength :: Maybe Integer
-  , mtFiles :: Maybe [MetainfoFile]
-  }
-
-data MetainfoFile = MetainfoFile {
-    mtfLength :: Integer
-  , mtfPath :: String
-  }
 
 readMetainfo :: Bencode -> Maybe Metainfo
 readMetainfo (BDict d) = do
