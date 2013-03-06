@@ -21,3 +21,4 @@ executable torrent
                    , bytestring
                    , HTTP
                    , network
+                   , mtl
