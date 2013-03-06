@@ -22,22 +22,22 @@ request req = do
     code <- getResponseCode resp
     case code of
         (2, _, _) ->
-            case parseBencode body of
-                Left x -> return . Left . show $ x
+            case parseBencode (B8.pack body) of
                 Right bcode ->
-                    let (BDict dict) = bcode
-                        (BString cmp) = Map.findWithDefault (BString "") "peers" dict
-                    in  return . Right $ TrackerResponse { resInterval = 10
-                                                         , resPeers = decodePeers $ B8.pack cmp
-                                                         }
-        (_, _, _) -> return . Left $ "Unexpected tracker response code" ++ show code
+                    case lookupString "peers" bcode of
+                        Just cmp -> return . Right $ TrackerResponse { resInterval = 10
+                                                                     , resPeers = decodePeers cmp
+                                                                     }
+                        Nothing -> return $ Left "Failed to find compact peer data"
+                Left e -> fail $ "Failed to parse bencode: " ++ e
+        (_, _, _) -> return . Left $ "Unexpected tracker response code: " ++ show code
   where
     url = reqAnnounce req ++ "?" ++ requestParams req
 
 
 requestParams :: TrackerRequest -> String
 requestParams req = urlEncodeVars
-    [ ("info_hash", reqInfoHash req)
+    [ ("info_hash", B8.unpack $ reqInfoHash req)
     , ("peer_id", reqPeerId req)
     , ("ip", reqIp req)
     , ("port", show $ reqPort req)

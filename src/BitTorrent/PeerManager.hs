@@ -24,17 +24,18 @@ data PeerState = PeerState
     }
 
 defaultState :: PeerState
-defaultState = PeerState { peerSocket = Nothing
-                         , peerChoked = False
-                         , peerInterested = False
-                         , peerAmChoking = False
-                         , peerAmInterested = False
-                         }
+defaultState = PeerState
+    { peerSocket = Nothing
+    , peerChoked = False
+    , peerInterested = False
+    , peerAmChoking = False
+    , peerAmInterested = False
+    }
 
 runPeerMgr :: Metainfo -> [Peer] -> IO ()
 runPeerMgr m ps = do
     -- Open connections
-    forM_ ps $ \p -> forkIO $ do
+    forM_ ps $ \p -> forkIO $
         void $ execStateT (runPeer m p) defaultState
 
     -- Loop until download finishes, computing interests
@@ -60,7 +61,7 @@ peerConnect a p = do
   where
     addr a p = SockAddrInet (PortNum . fromIntegral $ p) a
 
-peerHandshake :: String -> PeerM ()
+peerHandshake :: B.ByteString -> PeerM ()
 peerHandshake ih = do
     sock <- fmap peerSocket get
     case sock of
@@ -68,7 +69,7 @@ peerHandshake ih = do
             B.concat $ map B.pack [ [protoHeaderSize]
                                   , map (fromIntegral . ord) protoHeader
                                   , protoReserved
-                                  , map (fromIntegral . ord) ih
+                                  , map (fromIntegral . ord) $ B8.unpack ih
                                   , map (fromIntegral . ord) protoPeerId ]
         Nothing -> fail "[handshake] Peer not yet connected."
   where
@@ -83,3 +84,4 @@ peerListen = do
     forever $ do
         d <- liftIO $ recv sock 4096
         unless (B.null d) (liftIO $ print d)
+        return ()

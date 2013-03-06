@@ -1,13 +1,14 @@
 module BitTorrent.Types where
 
+import qualified Data.ByteString as B
 import Data.Word
 
-type Hash = String
+type Hash = B.ByteString
 
 data Metainfo = Metainfo
     { mtAnnounce :: String
-    , mtInfoHash :: String
-    , mtName :: String
+    , mtInfoHash :: B.ByteString
+    , mtName :: B.ByteString
     , mtPieceLen :: Integer
     , mtPieces :: [Hash]
     , mtLength :: Maybe Integer
@@ -21,7 +22,7 @@ data MetainfoFile = MetainfoFile
 
 data TrackerRequest = TrackerRequest
     { reqAnnounce :: String
-    , reqInfoHash :: String
+    , reqInfoHash :: B.ByteString
     , reqPeerId :: String
     , reqIp :: String
     , reqPort :: Int
