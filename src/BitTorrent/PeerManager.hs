@@ -66,11 +66,11 @@ peerHandshake ih = do
     sock <- fmap peerSocket get
     case sock of
         Just s -> void . liftIO $ send s $
-            B.concat $ map B.pack [ [protoHeaderSize]
-                                  , map (fromIntegral . ord) protoHeader
-                                  , protoReserved
-                                  , map (fromIntegral . ord) $ B8.unpack ih
-                                  , map (fromIntegral . ord) protoPeerId ]
+            B.concat [ B.pack $ [protoHeaderSize]
+                     , B.pack $ map (fromIntegral . ord) protoHeader
+                     , B.pack $ protoReserved
+                     , ih
+                     , B.pack $ map (fromIntegral . ord) protoPeerId ]
         Nothing -> fail "[handshake] Peer not yet connected."
   where
     protoHeaderSize = fromIntegral . length $ protoHeader
