@@ -1,30 +1,56 @@
 module BitTorrent.Metainfo
-    ( announce
-    , info
-    , hash
+    ( Hash
+    , Metainfo(..)
+    , MetainfoFile(..)
+    , readMetainfo
     ) where
 
+import Control.Applicative
 import qualified Crypto.Hash.SHA1 as SHA1
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map as Map
 
 import BitTorrent.Bencode
 
-announce :: Bencode -> Maybe String
-announce (BDict d) = do
-    l <- Map.lookup "announce" d
-    case l of
-        (BString s) -> Just s
-        _ -> Nothing
-announce _ = fail "Expected dictionary"
+type Hash = String
 
-info :: Bencode -> Maybe (Map.Map String Bencode)
-info (BDict d) = do
-    l <- Map.lookup "info" d
-    case l of
-        (BDict i) -> Just i
-        _ -> Nothing
-info _ = fail "Expected dictionary"
+data Metainfo = Metainfo {
+    mtAnnounce :: String
+  , mtInfoHash :: String
+  , mtName :: String
+  , mtPieceLen :: Integer
+  , mtPieces :: [Hash]
+  , mtLength :: Maybe Integer
+  , mtFiles :: Maybe [MetainfoFile]
+  }
+
+data MetainfoFile = MetainfoFile {
+    mtfLength :: Integer
+  , mtfPath :: String
+  }
+
+readMetainfo :: Bencode -> Maybe Metainfo
+readMetainfo (BDict d) = do
+    (BString ann) <- Map.lookup "announce" d
+    (BDict info) <- Map.lookup "info" d
+    let infoHash = hash $ BDict info
+    (BString name) <- Map.lookup "name" info
+    (BInt pieceLen) <- Map.lookup "piece length" info
+    pieces <- (return . readPieces) =<< Map.lookup "pieces" info
+    let lenM = Map.lookup "length" info
+    case lenM of
+        Just (BInt len) -> 
+            return $ Metainfo ann infoHash name pieceLen pieces (Just len) Nothing
+        Nothing -> do
+            let files = readFiles =<< Map.lookup "files" info
+            return $ Metainfo ann infoHash name pieceLen pieces Nothing files
+
+readPieces :: Bencode -> [Hash]
+readPieces (BString "") = []
+readPieces (BString s) = (take 20 s) : readPieces (BString $ drop 20 s)
+
+readFiles :: Bencode -> Maybe [MetainfoFile]
+readFiles = undefined
 
 hash :: Bencode -> String
 hash b = B.unpack $ SHA1.hash bs

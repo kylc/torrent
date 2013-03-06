@@ -19,10 +19,10 @@ run f = do
         Left pe -> fail $ show pe
         Right root -> do
             -- Request tracker information
-            let infodict = fromMaybe Map.empty $ info root
+            let metainfo = fromJust $ readMetainfo root
                 req = TrackerRequest {
-                          reqAnnounce = fromMaybe "" $ announce root
-                        , reqInfoHash = hash $ BDict infodict
+                          reqAnnounce = mtAnnounce metainfo
+                        , reqInfoHash = mtInfoHash metainfo
                         , reqPeerId = "abcdefghijklmnopqrst" -- TODO
                         , reqIp = "0.0.0.0" -- TODO
                         , reqPort = 5555 -- TODO
