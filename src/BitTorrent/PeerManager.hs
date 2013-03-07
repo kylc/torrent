@@ -1,5 +1,8 @@
 module BitTorrent.PeerManager where
 
+import Debug.Trace
+
+import Control.Applicative
 import Control.Concurrent
 import Control.Monad
 import Control.Monad.State
@@ -8,8 +11,13 @@ import qualified Data.ByteString.Char8 as B8
 import Data.Char (ord)
 import Data.Word
 import Network
-import Network.Socket hiding (send, sendTo, recv, recvFrom)
+import Network.Socket hiding (KeepAlive, send, sendTo, recv, recvFrom)
 import Network.Socket.ByteString
+
+import qualified Data.Attoparsec as A
+import qualified Data.Attoparsec.Binary as A
+import qualified System.IO.Streams as Streams
+import qualified System.IO.Streams.Attoparsec as Streams
 
 import BitTorrent.Types
 
@@ -17,6 +25,7 @@ type PeerM a = StateT PeerState IO a
 
 data PeerState = PeerState
     { peerSocket :: Maybe Socket
+    , peerHandshaken :: Bool
     , peerChoked :: Bool
     , peerInterested :: Bool
     , peerAmChoking :: Bool
@@ -26,6 +35,7 @@ data PeerState = PeerState
 defaultState :: PeerState
 defaultState = PeerState
     { peerSocket = Nothing
+    , peerHandshaken = False
     , peerChoked = False
     , peerInterested = False
     , peerAmChoking = False
@@ -66,22 +76,59 @@ peerHandshake ih = do
     sock <- fmap peerSocket get
     case sock of
         Just s -> void . liftIO $ send s $
-            B.concat [ B.pack $ [protoHeaderSize]
-                     , B.pack $ map (fromIntegral . ord) protoHeader
-                     , B.pack $ protoReserved
+            B.concat [ B.pack [protoHeaderSize]
+                     , strToBS protoHeader
+                     , B.pack protoReserved
                      , ih
-                     , B.pack $ map (fromIntegral . ord) protoPeerId ]
+                     , strToBS protoPeerId ]
         Nothing -> fail "[handshake] Peer not yet connected."
   where
     protoHeaderSize = fromIntegral . length $ protoHeader
     protoHeader = "BitTorrent protocol"
     protoReserved = replicate 8 0
     protoPeerId = "-HT0001-asdefghjasdh"
+    strToBS = B.pack . map (fromIntegral . ord)
 
 peerListen :: PeerM ()
 peerListen = do
     (Just sock) <- fmap peerSocket get
+    (is, os) <- liftIO $ Streams.socketToStreams sock
     forever $ do
-        d <- liftIO $ recv sock 4096
-        unless (B.null d) (liftIO $ print d)
-        return ()
+        p <- parser
+        m <- liftIO $ Streams.parseFromStream p is
+        trace (show m) $ return m
+        modify $ \s -> s { peerHandshaken = True } -- TODO
+  where
+    parser = do
+        shaken <- fmap peerHandshaken get
+        return $ if shaken
+                     then parseMessage
+                     else parseHandshake
+
+parseMessage :: A.Parser Message
+parseMessage = do
+    len <- A.anyWord8
+    if len == 0
+        then return KeepAlive
+        else parseMessage' $ fromIntegral len
+  where
+    parseMessage' len = do
+        id <- A.anyWord8
+        case id of
+            0 -> return Choke
+            1 -> return Unchoke
+            2 -> return Interested
+            3 -> return NotInterested
+            4 -> Have <$> w32
+            5 -> Bitfield <$> A.take (len - 1)
+            6 -> Request <$> w32 <*> w32 <*> w32
+            7 -> Piece <$> w32 <*> w32 <*> A.take (len - 9)
+            8 -> Cancel <$> w32 <*> w32 <*> w32
+            9 -> Port <$> w32
+            _ -> fail $ "Invalid message id: " ++ show id
+    w32 = fromIntegral <$> A.anyWord32be
+
+parseHandshake :: A.Parser Message
+parseHandshake =
+    Handshake <$> (A.anyWord8 >>= A.take . fromIntegral)
+              <*> A.take 8 <*> A.take 20 <*> A.take 20

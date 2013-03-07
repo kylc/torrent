@@ -53,13 +53,21 @@ data Peer = Peer
     , peerPort :: Word16
     } deriving (Eq, Show)
 
+type ProtocolName = B.ByteString
+type ProtocolExt = B.ByteString
+type PeerID = B.ByteString
+
 -- TODO: Fill these in
-data Message = Choke
+data Message = KeepAlive
+             | Handshake ProtocolName ProtocolExt Hash PeerID
+             | Choke
              | Unchoke
              | Interested
              | NotInterested
-             | Have
-             | BitField
-             | Request
-             | Piece
-             | Cancel
+             | Have Integer
+             | Bitfield B.ByteString
+             | Request Integer Integer Integer
+             | Piece Integer Integer B.ByteString
+             | Cancel Integer Integer Integer
+             | Port Integer
+    deriving (Eq, Show)

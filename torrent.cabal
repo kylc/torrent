@@ -22,3 +22,5 @@ executable torrent
                    , network
                    , mtl
                    , attoparsec
+                   , attoparsec-binary
+                   , io-streams

@@ -17,6 +17,8 @@ import qualified Data.Map as Map
 import qualified Crypto.Hash.SHA1 as SHA1
 import Data.Attoparsec.ByteString
 import Data.Attoparsec.ByteString.Char8 as A8
+import qualified System.IO.Streams as Streams
+import qualified System.IO.Streams.Attoparsec as Streams
 
 data Bencode = BInt Integer
              | BString B.ByteString
@@ -36,8 +38,8 @@ instance Show Bencode where
 parseBencode :: B.ByteString -> Either String Bencode
 parseBencode = parseOnly bencode
 
-parseBencodeFile :: String -> IO (Either String Bencode)
-parseBencodeFile = liftM parseBencode . B.readFile
+parseBencodeFile :: String -> IO Bencode
+parseBencodeFile f = Streams.withFileAsInput f (Streams.parseFromStream bencode)
 
 bencode :: Parser Bencode
 bencode = bInt
