@@ -1,7 +1,9 @@
 module BitTorrent.Types where
 
+import Control.Monad.State (StateT)
 import qualified Data.ByteString as B
 import Data.Word
+import Network (Socket)
 
 type Hash = B.ByteString
 
@@ -52,6 +54,27 @@ data Peer = Peer
     , peerIp :: Word32
     , peerPort :: Word16
     } deriving (Eq, Show)
+
+type PeerM a = StateT PeerState IO a
+
+data PeerState = PeerState
+    { peerSocket :: Maybe Socket
+    , peerHandshaken :: Bool
+    , peerChoked :: Bool
+    , peerInterested :: Bool
+    , peerAmChoking :: Bool
+    , peerAmInterested :: Bool
+    }
+
+defaultPeerState :: PeerState
+defaultPeerState = PeerState
+    { peerSocket = Nothing
+    , peerHandshaken = False
+    , peerChoked = False
+    , peerInterested = False
+    , peerAmChoking = False
+    , peerAmInterested = False
+    }
 
 type ProtocolName = B.ByteString
 type ProtocolExt = B.ByteString
