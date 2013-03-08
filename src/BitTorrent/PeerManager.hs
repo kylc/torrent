@@ -3,6 +3,7 @@ module BitTorrent.PeerManager
     ) where
 
 import Control.Concurrent
+import Control.Concurrent.Delay
 import Control.Monad.State
 
 import BitTorrent.Peer
@@ -17,5 +18,4 @@ runPeerMgr m ps = do
     -- Loop until download finishes, computing interests
     forever $ do
         putStrLn "Tick"
-        threadDelay $ 1000000 * 1 -- 1 second
-
+        delaySeconds 1

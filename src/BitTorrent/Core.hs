@@ -3,6 +3,7 @@ module BitTorrent.Core
     ) where
 
 import Control.Concurrent
+import Control.Concurrent.Delay
 import Control.Monad
 import Data.Maybe
 import qualified Data.Map as Map
@@ -39,6 +40,6 @@ run f = do
         Left e -> fail $ "Failed to parse bencode file: " ++ e
 
     -- Download!
-    forever $ threadDelay $ 1000000 * 1 -- 1 second
+    forever $ delaySeconds 1
 
     return ()
