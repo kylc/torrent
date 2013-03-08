@@ -1,4 +1,6 @@
-module BitTorrent.Core where
+module BitTorrent.Core
+    ( run
+    ) where
 
 import Control.Concurrent
 import Control.Monad

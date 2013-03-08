@@ -1,4 +1,6 @@
-module BitTorrent.PeerManager where
+module BitTorrent.PeerManager
+    ( runPeerMgr
+    ) where
 
 import Control.Concurrent
 import Control.Monad.State
