@@ -8,6 +8,7 @@ import qualified Data.ByteString.Char8 as B8
 import Data.Char (intToDigit, ord)
 import Data.List (intercalate)
 import qualified Data.Map as Map
+import Data.Maybe (fromJust)
 import Data.Word
 import Network.HTTP
 
@@ -21,18 +22,22 @@ request req = do
     body <- getResponseBody resp
     code <- getResponseCode resp
     case code of
-        (2, _, _) ->
-            case parseBencode (B8.pack body) of
-                Right bcode ->
-                    case lookupString "peers" bcode of
-                        Just cmp -> return . Right $ TrackerResponse { resInterval = 10
-                                                                     , resPeers = decodePeers cmp
-                                                                     }
-                        Nothing -> return $ Left "Failed to find compact peer data"
-                Left e -> fail $ "Failed to parse bencode: " ++ e
+        (2, _, _) -> return $ readBody body
         (_, _, _) -> return . Left $ "Unexpected tracker response code: " ++ show code
   where
     url = reqAnnounce req ++ "?" ++ requestParams req
+
+readBody :: String -> Either String TrackerResponse
+readBody body =
+    case parseBencode (B8.pack body) of
+        Right bcode ->
+            case lookupString "peers" bcode of
+                Just cmp ->
+                    Right $ TrackerResponse { resInterval = fromIntegral . fromJust$ lookupInt "interval" bcode
+                                            , resPeers = decodePeers cmp
+                                            }
+                Nothing -> Left "Failed to find compact peer data"
+        Left e -> fail $ "Failed to parse bencode: " ++ e
 
 
 requestParams :: TrackerRequest -> String
