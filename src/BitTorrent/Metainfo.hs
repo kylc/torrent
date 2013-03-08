@@ -20,12 +20,9 @@ readMetainfo b = do
     name <- lookupString "name" info
     pieceLen <- lookupInt "piece length" info
     pieces <- fmap readPieces $ lookupDict "pieces" info
-    case lookupDict "length" info of
-        Just (BInt len) -> 
-            return $ Metainfo ann infoHash name pieceLen pieces (Just len) Nothing
-        Nothing -> do
-            let files = readFiles =<< lookupDict "files" info
-            return $ Metainfo ann infoHash name pieceLen pieces Nothing files
+    let len = lookupInt "length" info
+    let files = readFiles =<< lookupDict "files" info
+    return $ Metainfo ann infoHash name pieceLen pieces len files
 
 readPieces :: Bencode -> [Hash]
 readPieces (BString s) = undefined
