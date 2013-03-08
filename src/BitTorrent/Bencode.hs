@@ -74,12 +74,12 @@ lookupDict s _ = Nothing
 lookupInt :: String -> Bencode -> Maybe Integer
 lookupInt k d = case lookupDict k d of
                        Just (BInt i) -> Just i
-                       Nothing -> Nothing
+                       _ -> Nothing
 
 lookupString :: String -> Bencode -> Maybe B8.ByteString
 lookupString k d = case lookupDict k d of
                        Just (BString s) -> Just s
-                       Nothing -> Nothing
+                       _ -> Nothing
 
 hash :: Bencode -> B.ByteString
 hash b = SHA1.hash bs
