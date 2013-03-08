@@ -50,7 +50,7 @@ instance Show Event where
     show Empty = "empty"
 
 data Peer = Peer
-    { peerId :: String
+    { peerId :: Maybe String
     , peerIp :: Word32
     , peerPort :: Word16
     } deriving (Eq, Show)
