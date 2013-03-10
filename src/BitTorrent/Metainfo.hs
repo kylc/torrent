@@ -6,6 +6,7 @@ module BitTorrent.Metainfo
     ) where
 
 import Control.Applicative
+import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.Map as Map
 
@@ -19,15 +20,16 @@ readMetainfo b = do
     let infoHash = hash info
     name <- lookupString "name" info
     pieceLen <- lookupInt "piece length" info
-    pieces <- fmap readPieces $ lookupDict "pieces" info
+    pieces <- fmap readPieces $ lookupString "pieces" info
     let len = lookupInt "length" info
     let files = readFiles =<< lookupDict "files" info
     return $ Metainfo ann infoHash name pieceLen pieces len files
 
-readPieces :: Bencode -> [Hash]
-readPieces (BString s) = undefined
---    | B.null s = []
---    | otherwise = B.append $ (B.take 20 s) (readPieces (BString $ B.drop 20 s))
+readPieces :: B.ByteString -> [Hash]
+readPieces b
+    | B.null b = []
+    | otherwise = let (h, r) = B.splitAt 20 b
+                  in h : readPieces r
 
 readFiles :: Bencode -> Maybe [MetainfoFile]
 readFiles = undefined
