@@ -4,6 +4,7 @@ module BitTorrent.PeerManager
 
 import Control.Concurrent
 import Control.Concurrent.Delay
+import Control.Monad.Reader
 import Control.Monad.State
 
 import BitTorrent.Peer
@@ -13,7 +14,8 @@ runPeerMgr :: Metainfo -> [Peer] -> IO ()
 runPeerMgr m ps = do
     -- Open connections
     forM_ ps $ \p -> forkIO $
-        void $ execStateT (runPeer m p) defaultPeerState
+        let st = defaultPeerState $ length (mtPieces m)
+        in void $ execStateT (runReaderT (runPeer p) m) st
 
     -- Loop until download finishes, computing interests
     forever $ do

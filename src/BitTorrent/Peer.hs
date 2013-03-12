@@ -4,6 +4,7 @@ module BitTorrent.Peer
 
 import Control.Applicative
 import Control.Monad
+import Control.Monad.Reader
 import Control.Monad.State
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as B8
@@ -22,12 +23,12 @@ import BitTorrent.Types
 
 import Debug.Trace
 
-runPeer :: Metainfo -> Peer -> PeerM ()
-runPeer m p = do
+runPeer :: Peer -> PeerM ()
+runPeer p = do
     liftIO $ putStrLn $ "Connecting to " ++ show p
 
     peerConnect (peerIp p) (peerPort p)
-    peerHandshake $ mtInfoHash m
+    peerHandshake
     peerListen
 
     return ()
@@ -40,8 +41,9 @@ peerConnect a p = do
   where
     addr a p = SockAddrInet (PortNum . fromIntegral $ p) a
 
-peerHandshake :: B.ByteString -> PeerM ()
-peerHandshake ih = do
+peerHandshake :: PeerM ()
+peerHandshake = do
+    ih <- fmap mtInfoHash ask
     sock <- fmap peerSocket get
     case sock of
         Just s -> void . liftIO $ send s $
