@@ -2,8 +2,11 @@ module BitTorrent.Types where
 
 import Control.Monad.State (StateT)
 import Control.Monad.Reader (ReaderT)
+import Data.Array.IArray
+import Data.Array.Unboxed
 import qualified Data.ByteString as B
 import Data.Word
+
 import Network (Socket)
 
 type Hash = B.ByteString
@@ -65,33 +68,36 @@ data PeerState = PeerState
     , peerInterested :: Bool
     , peerAmChoking :: Bool
     , peerAmInterested :: Bool
+    , peerHas :: UArray Int Bool
     }
 
-defaultPeerState :: PeerState
-defaultPeerState = PeerState
+defaultPeerState :: Int -> PeerState
+defaultPeerState pieceCount = PeerState
     { peerSocket = Nothing
     , peerHandshaken = False
     , peerChoked = False
     , peerInterested = False
     , peerAmChoking = False
     , peerAmInterested = False
+    , peerHas = array (0, pieceCount - 1) []
     }
+
+data PieceState = PieceDone | PieceStarted | PieceEmpty
 
 type ProtocolName = B.ByteString
 type ProtocolExt = B.ByteString
 type PeerID = B.ByteString
 
--- TODO: Fill these in
 data Message = KeepAlive
              | Handshake ProtocolName ProtocolExt Hash PeerID
              | Choke
              | Unchoke
              | Interested
              | NotInterested
-             | Have Integer
+             | Have Int
              | Bitfield B.ByteString
-             | Request Integer Integer Integer
-             | Piece Integer Integer B.ByteString
-             | Cancel Integer Integer Integer
-             | Port Integer
+             | Request Int Int Int
+             | Piece Int Int B.ByteString
+             | Cancel Int Int Int
+             | Port Int
     deriving (Eq, Show)

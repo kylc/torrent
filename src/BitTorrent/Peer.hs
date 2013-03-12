@@ -6,8 +6,10 @@ import Control.Applicative
 import Control.Monad
 import Control.Monad.Reader
 import Control.Monad.State
+import Data.Array.IArray
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as B8
+import Data.Bits
 import Data.Char (ord)
 import Data.Word
 import Network
@@ -67,8 +69,8 @@ peerListen = do
     forever $ do
         p <- parser
         m <- liftIO $ Streams.parseFromStream p is
+        handleMessage m
         trace (show m) $ return m
-        modify $ \s -> s { peerHandshaken = True } -- TODO
   where
     parser = do
         shaken <- fmap peerHandshaken get
@@ -104,3 +106,26 @@ parseHandshake =
     Handshake <$> (A.anyWord8 >>= A.take . fromIntegral)
               <*> A.take 8 <*> A.take 20 <*> A.take 20
 
+handleMessage :: Message -> PeerM ()
+handleMessage m =
+    case m of
+        KeepAlive -> return () -- TODO: Send KeepAlive back
+        Handshake {} -> modify $ \s -> s { peerHandshaken = True }
+        Choke -> modify $ \s -> s { peerChoked = True }
+        Unchoke -> modify $ \s -> s { peerChoked = False }
+        Interested -> modify $ \s -> s { peerInterested = True }
+        NotInterested -> modify $ \s -> s { peerInterested = False }
+        Have x -> modify $ \s -> s { peerHas = peerHas s // [(x, True)] }
+        Bitfield x -> do
+            pieceCount <- length . mtPieces <$> ask
+            let changes = readBitfield pieceCount x
+            modify $ \s -> s { peerHas = peerHas s // changes }
+        _ -> error $ "Unimplemented message handling of " ++ show m
+
+readBitfield :: Int -> B.ByteString -> [(Int, Bool)]
+readBitfield max = filter (\(i, _) -> i <= max) . go 0 . B.unpack
+  where
+    go n [] = []
+    go n (x:xs) = readVals n x ++ go (n + 8) xs
+    readVals n x = map (\i -> readVal (n + i) x) $ reverse [0..7]
+    readVal n x = (n, testBit x n)
