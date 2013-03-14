@@ -4,24 +4,25 @@ module BitTorrent.PeerManager
 
 import Control.Concurrent
 import Control.Concurrent.Delay
-import Control.Monad.Reader
-import Control.Monad.State
+import Control.Monad
 import Data.Array.IArray
 import Data.Array.Unboxed
+
+import Control.Distributed.Process
 
 import BitTorrent.Peer
 import BitTorrent.Types
 
-runPeerMgr :: Metainfo -> [Peer] -> IO ()
+runPeerMgr :: Metainfo -> [Peer] -> Process ()
 runPeerMgr m ps = do
     -- Open connections
-    forM_ ps $ \p -> forkIO $
+    forM_ ps $ \p ->
         let st = defaultPeerState $ length (mtPieces m)
-        in void $ execStateT (runReaderT (runPeer p) m) st
+        in spawnLocal $ runPeer m p st
 
     -- Wait a bit for all incoming bitfields and haves to arrive
     -- TODO: How long should we wait?  Or should we have a smarter approach?
-    delaySeconds 3
+    liftIO $ delaySeconds 3
 
     -- Download each piece
     -- TODO: This is really dumb right now.  Should randomly choose pieces based

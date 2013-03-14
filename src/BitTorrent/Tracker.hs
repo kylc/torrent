@@ -33,9 +33,9 @@ readBody body =
         Right bcode ->
             case lookupString "peers" bcode of
                 Just cmp ->
-                    Right $ TrackerResponse { resInterval = fromIntegral . fromJust$ lookupInt "interval" bcode
-                                            , resPeers = decodePeers cmp
-                                            }
+                    Right TrackerResponse { resInterval = fromIntegral . fromJust$ lookupInt "interval" bcode
+                                          , resPeers = decodePeers cmp
+                                          }
                 Nothing -> Left "Failed to find compact peer data"
         Left e -> fail $ "Failed to parse bencode: " ++ e
 

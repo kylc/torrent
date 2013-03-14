@@ -4,18 +4,15 @@ module BitTorrent.Peer
 
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Reader
-import Control.Monad.State
 import Data.Array.IArray
 import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as B8
 import Data.Bits
 import Data.Char (ord)
 import Data.Word
-import Network
-import Network.Socket hiding (KeepAlive, send, sendTo, recv, recvFrom)
-import Network.Socket.ByteString
+import Network.Socket (Socket)
+import qualified Network.Socket as N
 
+import Control.Distributed.Process
 import qualified Data.Attoparsec as A
 import qualified Data.Attoparsec.Binary as A
 import qualified System.IO.Streams as Streams
@@ -23,38 +20,39 @@ import qualified System.IO.Streams.Attoparsec as Streams
 
 import BitTorrent.Types
 
-import Debug.Trace
+runPeer :: Metainfo -> Peer -> PeerState -> Process ()
+runPeer meta peer state = do
+    sock <- liftIO $ peerConnect (peerIp peer) (peerPort peer)
+    (is, os) <- liftIO $ Streams.socketToStreams sock
 
-runPeer :: Peer -> PeerM ()
-runPeer p = do
-    liftIO $ putStrLn $ "Connecting to " ++ show p
+    say $ "Connected to: " ++ show peer
 
-    peerConnect (peerIp p) (peerPort p)
-    peerHandshake
-    peerListen
+    handshake <- liftIO $ do
+        _ <- peerHandshake os (mtInfoHash meta)
+        peerListen is parseHandshake
 
-    return ()
+    say $ "Received message: " ++ show handshake
 
-peerConnect :: Word32 -> Word16 -> PeerM ()
+    forever $ do
+        message <- liftIO $ peerListen is parseMessage
+        say $ "Received message: " ++ show message
+
+peerConnect :: Word32 -> Word16 -> IO Socket
 peerConnect a p = do
-    sock <- liftIO $ socket AF_INET Stream defaultProtocol
-    liftIO $ connect sock $ addr a p
-    modify $ \s -> s { peerSocket = Just sock }
+    sock <- N.socket N.AF_INET N.Stream N.defaultProtocol
+    N.connect sock $ addr a p
+    return sock
   where
-    addr a p = SockAddrInet (PortNum . fromIntegral $ p) a
+    addr a p = N.SockAddrInet (N.PortNum . fromIntegral $ p) a
 
-peerHandshake :: PeerM ()
-peerHandshake = do
-    ih <- fmap mtInfoHash ask
-    sock <- fmap peerSocket get
-    case sock of
-        Just s -> void . liftIO $ send s $
-            B.concat [ B.pack [protoHeaderSize]
-                     , strToBS protoHeader
-                     , B.pack protoReserved
-                     , ih
-                     , strToBS protoPeerId ]
-        Nothing -> fail "[handshake] Peer not yet connected."
+peerHandshake :: Streams.OutputStream B.ByteString -> Hash -> IO ()
+peerHandshake is ih = void $
+    flip Streams.write is $ Just $
+        B.concat [ B.pack [protoHeaderSize]
+                 , strToBS protoHeader
+                 , B.pack protoReserved
+                 , ih
+                 , strToBS protoPeerId ]
   where
     protoHeaderSize = fromIntegral . length $ protoHeader
     protoHeader = "BitTorrent protocol"
@@ -62,21 +60,8 @@ peerHandshake = do
     protoPeerId = "-HT0001-asdefghjasdh"
     strToBS = B.pack . map (fromIntegral . ord)
 
-peerListen :: PeerM ()
-peerListen = do
-    (Just sock) <- fmap peerSocket get
-    (is, os) <- liftIO $ Streams.socketToStreams sock
-    forever $ do
-        p <- parser
-        m <- liftIO $ Streams.parseFromStream p is
-        handleMessage m
-        trace (show m) $ return m
-  where
-    parser = do
-        shaken <- fmap peerHandshaken get
-        return $ if shaken
-                     then parseMessage
-                     else parseHandshake
+peerListen :: Streams.InputStream B.ByteString -> A.Parser Message -> IO Message
+peerListen is parser = Streams.parseFromStream parser is
 
 parseMessage :: A.Parser Message
 parseMessage = do
@@ -106,8 +91,9 @@ parseHandshake =
     Handshake <$> (A.anyWord8 >>= A.take . fromIntegral)
               <*> A.take 8 <*> A.take 20 <*> A.take 20
 
-handleMessage :: Message -> PeerM ()
-handleMessage m =
+handleMessage :: Message -> IO ()
+handleMessage m = return ()
+{-
     case m of
         KeepAlive -> return () -- TODO: Send KeepAlive back
         Handshake {} -> modify $ \s -> s { peerHandshaken = True }
@@ -121,6 +107,7 @@ handleMessage m =
             let changes = readBitfield pieceCount x
             modify $ \s -> s { peerHas = peerHas s // changes }
         _ -> error $ "Unimplemented message handling of " ++ show m
+-}
 
 readBitfield :: Int -> B.ByteString -> [(Int, Bool)]
 readBitfield max = filter (\(i, _) -> i <= max) . go 0 . B.unpack

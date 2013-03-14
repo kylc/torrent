@@ -20,7 +20,9 @@ executable torrent
                    , bytestring
                    , HTTP
                    , network
-                   , mtl
                    , attoparsec
                    , attoparsec-binary
                    , io-streams
+                   , distributed-process
+                   , network-transport-tcp
+                   , array

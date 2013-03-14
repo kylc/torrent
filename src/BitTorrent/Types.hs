@@ -1,7 +1,5 @@
 module BitTorrent.Types where
 
-import Control.Monad.State (StateT)
-import Control.Monad.Reader (ReaderT)
 import Data.Array.IArray
 import Data.Array.Unboxed
 import qualified Data.ByteString as B
@@ -58,8 +56,6 @@ data Peer = Peer
     , peerIp :: Word32
     , peerPort :: Word16
     } deriving (Eq, Show)
-
-type PeerM = ReaderT Metainfo (StateT PeerState IO)
 
 data PeerState = PeerState
     { peerSocket :: Maybe Socket
