@@ -32,5 +32,6 @@ readPieces b
     | otherwise = let (h, r) = B.splitAt 20 b
                   in h : readPieces r
 
+-- TODO: Write this
 readFiles :: Bencode -> Maybe [MetainfoFile]
 readFiles = undefined

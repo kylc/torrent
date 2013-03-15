@@ -19,6 +19,7 @@ import BitTorrent.Types
 
 run :: String -> IO ()
 run f = do
+    -- TODO: What if this fails?
     Right t <- createTransport "127.0.0.1" "10501" defaultTCPParameters
     node <- newLocalNode t initRemoteTable
 
@@ -26,12 +27,14 @@ run f = do
     b <- parseBencodeFile f
 
     -- Request tracker information
+    -- TODO: Send some real values here
+    -- TODO: Extract this into a process
     let metainfo = fromJust $ readMetainfo b
         req = TrackerRequest { reqAnnounce = mtAnnounce metainfo
                              , reqInfoHash = mtInfoHash metainfo
-                             , reqPeerId = "abcdefghijklmnopqrst" -- TODO
-                             , reqIp = "0.0.0.0" -- TODO
-                             , reqPort = 5555 -- TODO
+                             , reqPeerId = "abcdefghijklmnopqrst"
+                             , reqIp = "0.0.0.0"
+                             , reqPort = 5555
                              , reqUploaded = 0
                              , reqDownloaded = 0
                              , reqLeft = 0

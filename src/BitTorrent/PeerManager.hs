@@ -34,6 +34,7 @@ runPeerMgr m ps = do
     forM_ [1..pieceCount] $ \i -> do
         let piece = mtPieces m !! i
             s = status ! i
+            -- TODO: Fix this
             -- peer = head $ filter (\p -> peerHas p ! i) ps
         return ()
 

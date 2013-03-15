@@ -29,6 +29,8 @@ runPeer meta peer state = do
         m <- expect :: Process Message
         say $ "Received message: " ++ show m
 
+        -- TODO: Handle message
+
 runPeerConnection :: Metainfo -> Peer -> ProcessId -> Process ()
 runPeerConnection meta peer pid = do
     sock <- liftIO $ peerConnect (peerIp peer) (peerPort peer)
@@ -100,6 +102,7 @@ parseHandshake =
     Handshake <$> (A.anyWord8 >>= A.take . fromIntegral)
               <*> A.take 8 <*> A.take 20 <*> A.take 20
 
+-- TODO: Redesign this with actor concurrency changes
 handleMessage :: Message -> IO ()
 handleMessage m = return ()
 {-
