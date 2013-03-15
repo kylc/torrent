@@ -59,7 +59,7 @@ peerConnect a p = do
 peerHandshake :: Streams.OutputStream B.ByteString -> Hash -> IO ()
 peerHandshake is ih = void $
     flip Streams.write is $ Just $
-        B.concat [ B.pack [protoHeaderSize]
+        B.concat [ B.singleton protoHeaderSize
                  , strToBS protoHeader
                  , B.pack protoReserved
                  , ih
