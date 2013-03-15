@@ -1,10 +1,15 @@
+{-# LANGUAGE DeriveGeneric, DeriveDataTypeable #-}
+
 module BitTorrent.Types where
+
+import Data.Typeable (Typeable)
+import Data.Word
+import GHC.Generics (Generic)
 
 import Data.Array.IArray
 import Data.Array.Unboxed
+import Data.Binary (Binary)
 import qualified Data.ByteString as B
-import Data.Word
-
 import Network (Socket)
 
 type Hash = B.ByteString
@@ -96,4 +101,6 @@ data Message = KeepAlive
              | Piece Int Int B.ByteString
              | Cancel Int Int Int
              | Port Int
-    deriving (Eq, Show)
+    deriving (Eq, Show, Generic, Typeable)
+
+instance Binary Message

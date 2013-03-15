@@ -22,20 +22,29 @@ import BitTorrent.Types
 
 runPeer :: Metainfo -> Peer -> PeerState -> Process ()
 runPeer meta peer state = do
+    pid <- getSelfPid
+    conn <- spawnLocal $ runPeerConnection meta peer pid
+
+    forever $ do
+        m <- expect :: Process Message
+        say $ "Received message: " ++ show m
+
+runPeerConnection :: Metainfo -> Peer -> ProcessId -> Process ()
+runPeerConnection meta peer pid = do
     sock <- liftIO $ peerConnect (peerIp peer) (peerPort peer)
     (is, os) <- liftIO $ Streams.socketToStreams sock
 
     say $ "Connected to: " ++ show peer
 
-    handshake <- liftIO $ do
-        _ <- peerHandshake os (mtInfoHash meta)
-        peerListen is parseHandshake
-
-    say $ "Received message: " ++ show handshake
+    handshake <- do
+        message <- liftIO $ do
+            peerHandshake os (mtInfoHash meta)
+            peerListen is parseHandshake
+        send pid message
 
     forever $ do
         message <- liftIO $ peerListen is parseMessage
-        say $ "Received message: " ++ show message
+        send pid message
 
 peerConnect :: Word32 -> Word16 -> IO Socket
 peerConnect a p = do

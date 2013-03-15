@@ -25,4 +25,5 @@ executable torrent
                    , io-streams
                    , distributed-process
                    , network-transport-tcp
+                   , binary >=0.6.3
                    , array
