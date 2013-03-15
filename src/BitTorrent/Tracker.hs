@@ -3,13 +3,14 @@ module BitTorrent.Tracker
     ) where
 
 import Data.Bits
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as B8
 import Data.Char (intToDigit, ord)
 import Data.List (intercalate)
 import qualified Data.Map as Map
 import Data.Maybe (fromJust)
 import Data.Word
+
+import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as B8
 import Network.HTTP
 
 import BitTorrent.Bencode

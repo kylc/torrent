@@ -6,9 +6,10 @@ module BitTorrent.Metainfo
     ) where
 
 import Control.Applicative
+import qualified Data.Map as Map
+
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as B8
-import qualified Data.Map as Map
 
 import BitTorrent.Bencode
 import BitTorrent.Types

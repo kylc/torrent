@@ -4,17 +4,17 @@ module BitTorrent.Peer
 
 import Control.Applicative
 import Control.Monad
-import Data.Array.IArray
-import qualified Data.ByteString as B
 import Data.Bits
 import Data.Char (ord)
 import Data.Word
-import Network.Socket (Socket)
-import qualified Network.Socket as N
 
 import Control.Distributed.Process
+import Data.Array.IArray
 import qualified Data.Attoparsec as A
 import qualified Data.Attoparsec.Binary as A
+import qualified Data.ByteString as B
+import Network.Socket (Socket)
+import qualified Network.Socket as N
 import qualified System.IO.Streams as Streams
 import qualified System.IO.Streams.Attoparsec as Streams
 

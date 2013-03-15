@@ -10,13 +10,13 @@ module BitTorrent.Bencode
 
 import Control.Applicative
 import Control.Monad
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as B8
 import qualified Data.Map as Map
 
 import qualified Crypto.Hash.SHA1 as SHA1
 import Data.Attoparsec.ByteString
 import Data.Attoparsec.ByteString.Char8 as A8
+import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as B8
 import qualified System.IO.Streams as Streams
 import qualified System.IO.Streams.Attoparsec as Streams
 

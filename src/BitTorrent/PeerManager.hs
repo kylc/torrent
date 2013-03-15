@@ -5,10 +5,10 @@ module BitTorrent.PeerManager
 import Control.Concurrent
 import Control.Concurrent.Delay
 import Control.Monad
-import Data.Array.IArray
-import Data.Array.Unboxed
 
 import Control.Distributed.Process
+import Data.Array.IArray
+import Data.Array.Unboxed
 
 import BitTorrent.Peer
 import BitTorrent.Types
