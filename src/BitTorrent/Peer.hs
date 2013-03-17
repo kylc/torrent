@@ -9,6 +9,7 @@ import Data.Char (ord)
 import Data.Word
 
 import Control.Distributed.Process
+import Control.Monad.State
 import Data.Array.IArray
 import qualified Data.Attoparsec as A
 import qualified Data.Attoparsec.Binary as A
@@ -26,10 +27,13 @@ runPeer meta peer state = do
     conn <- spawnLocal $ runPeerConnection meta peer pid
 
     forever $ do
-        m <- expect :: Process Message
-        say $ "Received message: " ++ show m
+        let pieceCount = length . mtPieces $ meta
+            state = defaultPeerState pieceCount
+        flip evalStateT state $ do -- TODO: 10
+            m <- lift $ (expect :: Process Message)
+            lift $ say $ "Received message: " ++ show m
 
-        -- TODO: Handle message
+            handleMessage m
 
 runPeerConnection :: Metainfo -> Peer -> ProcessId -> Process ()
 runPeerConnection meta peer pid = do
@@ -103,28 +107,26 @@ parseHandshake =
               <*> A.take 8 <*> A.take 20 <*> A.take 20
 
 -- TODO: Redesign this with actor concurrency changes
-handleMessage :: Message -> IO ()
-handleMessage m = return ()
-{-
+handleMessage :: Message -> StateT PeerState Process ()
+handleMessage m =
     case m of
         KeepAlive -> return () -- TODO: Send KeepAlive back
-        Handshake {} -> modify $ \s -> s { peerHandshaken = True }
+        Handshake {} -> return () -- Already handled
         Choke -> modify $ \s -> s { peerChoked = True }
         Unchoke -> modify $ \s -> s { peerChoked = False }
         Interested -> modify $ \s -> s { peerInterested = True }
         NotInterested -> modify $ \s -> s { peerInterested = False }
         Have x -> modify $ \s -> s { peerHas = peerHas s // [(x, True)] }
         Bitfield x -> do
-            pieceCount <- length . mtPieces <$> ask
+            pieceCount <- length . elems . peerHas <$> get
             let changes = readBitfield pieceCount x
             modify $ \s -> s { peerHas = peerHas s // changes }
-        _ -> error $ "Unimplemented message handling of " ++ show m
--}
 
+-- TODO: This works (I think), but it's pretty terrible.
 readBitfield :: Int -> B.ByteString -> [(Int, Bool)]
-readBitfield max = filter (\(i, _) -> i <= max) . go 0 . B.unpack
+readBitfield max = filter (\(i, _) -> i < max) . go 0 . B.unpack
   where
     go n [] = []
     go n (x:xs) = readVals n x ++ go (n + 8) xs
-    readVals n x = map (\i -> readVal (n + i) x) $ reverse [0..7]
-    readVal n x = (n, testBit x n)
+    readVals n x = map (\i -> readVal (n + i) i x) $ reverse [0..7]
+    readVal c n x = (c, testBit x n)

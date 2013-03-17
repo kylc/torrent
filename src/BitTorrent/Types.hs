@@ -64,18 +64,16 @@ data Peer = Peer
 
 data PeerState = PeerState
     { peerSocket :: Maybe Socket
-    , peerHandshaken :: Bool
     , peerChoked :: Bool
     , peerInterested :: Bool
     , peerAmChoking :: Bool
     , peerAmInterested :: Bool
     , peerHas :: UArray Int Bool
-    }
+    } deriving (Eq, Show)
 
 defaultPeerState :: Int -> PeerState
 defaultPeerState pieceCount = PeerState
     { peerSocket = Nothing
-    , peerHandshaken = False
     , peerChoked = False
     , peerInterested = False
     , peerAmChoking = False
