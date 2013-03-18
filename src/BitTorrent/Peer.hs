@@ -111,7 +111,7 @@ handleMessage :: Message -> StateT PeerState Process ()
 handleMessage m =
     case m of
         KeepAlive -> return () -- TODO: Send KeepAlive back
-        Handshake {} -> return () -- Already handled
+        Handshake {} -> return () -- TODO: Verify data
         Choke -> modify $ \s -> s { peerChoked = True }
         Unchoke -> modify $ \s -> s { peerChoked = False }
         Interested -> modify $ \s -> s { peerInterested = True }
