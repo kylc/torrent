@@ -29,7 +29,7 @@ runPeer meta peer state = do
     forever $ do
         let pieceCount = length . mtPieces $ meta
             state = defaultPeerState pieceCount
-        flip evalStateT state $ do -- TODO: 10
+        flip evalStateT state $ do
             m <- lift $ (expect :: Process Message)
             lift $ say $ "Received message: " ++ show m
 
@@ -106,7 +106,6 @@ parseHandshake =
     Handshake <$> (A.anyWord8 >>= A.take . fromIntegral)
               <*> A.take 8 <*> A.take 20 <*> A.take 20
 
--- TODO: Redesign this with actor concurrency changes
 handleMessage :: Message -> StateT PeerState Process ()
 handleMessage m =
     case m of
