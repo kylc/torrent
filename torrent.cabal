@@ -27,3 +27,4 @@ executable torrent
                    , network-transport-tcp
                    , binary >=0.6.3
                    , array
+                   , mtl
