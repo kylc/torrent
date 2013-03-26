@@ -21,8 +21,8 @@ import qualified System.IO.Streams.Attoparsec as Streams
 
 import BitTorrent.Types
 
-runPeer :: Metainfo -> Peer -> PeerState -> Process ()
-runPeer meta peer state = do
+runPeer :: Metainfo -> Peer -> Process ()
+runPeer meta peer = do
     pid <- getSelfPid
     conn <- spawnLocal $ runPeerConnection meta peer pid
 
@@ -30,10 +30,12 @@ runPeer meta peer state = do
         let pieceCount = length . mtPieces $ meta
             state = defaultPeerState pieceCount
         flip evalStateT state $ do
-            m <- lift $ (expect :: Process Message)
-            lift $ say $ "Received message: " ++ show m
+            m <- lift $ (expect :: Process ProcMessage)
+            case m of
+                PeerRecv msg -> handleMessage pieceCount msg
+                PeerFetch i -> lift $ say $ "Fetcing " ++ show i
 
-            handleMessage m
+            -- lift $ say $ "Received message: " ++ show m
 
 runPeerConnection :: Metainfo -> Peer -> ProcessId -> Process ()
 runPeerConnection meta peer pid = do
@@ -46,11 +48,11 @@ runPeerConnection meta peer pid = do
         message <- liftIO $ do
             peerHandshake os (mtInfoHash meta)
             peerListen is parseHandshake
-        send pid message
+        send pid $ PeerRecv message
 
     forever $ do
         message <- liftIO $ peerListen is parseMessage
-        send pid message
+        send pid $ PeerRecv message
 
 peerConnect :: Word32 -> Word16 -> IO Socket
 peerConnect a p = do
@@ -75,10 +77,10 @@ peerHandshake is ih = void $
     protoPeerId = "-HT0001-asdefghjasdh"
     strToBS = B.pack . map (fromIntegral . ord)
 
-peerListen :: Streams.InputStream B.ByteString -> A.Parser Message -> IO Message
+peerListen :: Streams.InputStream B.ByteString -> A.Parser PeerMessage -> IO PeerMessage
 peerListen is parser = Streams.parseFromStream parser is
 
-parseMessage :: A.Parser Message
+parseMessage :: A.Parser PeerMessage
 parseMessage = do
     len <- A.anyWord8
     if len == 0
@@ -101,13 +103,13 @@ parseMessage = do
             _ -> fail $ "Invalid message id: " ++ show id
     w32 = fromIntegral <$> A.anyWord32be
 
-parseHandshake :: A.Parser Message
+parseHandshake :: A.Parser PeerMessage
 parseHandshake =
     Handshake <$> (A.anyWord8 >>= A.take . fromIntegral)
               <*> A.take 8 <*> A.take 20 <*> A.take 20
 
-handleMessage :: Message -> StateT PeerState Process ()
-handleMessage m =
+handleMessage :: Int -> PeerMessage -> StateT PeerState Process ()
+handleMessage pieceCount m =
     case m of
         KeepAlive -> return () -- TODO: Send KeepAlive back
         Handshake {} -> return () -- TODO: Verify data
@@ -115,11 +117,17 @@ handleMessage m =
         Unchoke -> modify $ \s -> s { peerChoked = False }
         Interested -> modify $ \s -> s { peerInterested = True }
         NotInterested -> modify $ \s -> s { peerInterested = False }
-        Have x -> modify $ \s -> s { peerHas = peerHas s // [(x, True)] }
-        Bitfield x -> do
-            pieceCount <- length . elems . peerHas <$> get
+        Have x -> lift $ do
+            pid <- getSelfPid
+            nsend "db_updater" (pid, PeerHas x)
+        Bitfield x -> lift $ do
             let changes = readBitfield pieceCount x
-            modify $ \s -> s { peerHas = peerHas s // changes }
+            forM_ changes $ \(x, b) ->
+              if b
+                then do
+                    pid <- getSelfPid
+                    nsend "db_updater" (pid, PeerHas x)
+                else return ()
 
 -- TODO: This works (I think), but it's pretty terrible.
 readBitfield :: Int -> B.ByteString -> [(Int, Bool)]

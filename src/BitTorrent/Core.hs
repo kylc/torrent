@@ -14,6 +14,7 @@ import Network.Transport.TCP
 import BitTorrent.Bencode
 import BitTorrent.Metainfo
 import BitTorrent.PeerManager
+import BitTorrent.PieceManager
 import BitTorrent.Tracker
 import BitTorrent.Types
 
@@ -45,8 +46,10 @@ run f = do
 
     -- Connect to peers
     case resp of
-        Right resp -> forkProcess node $
-            void $ spawnLocal . runPeerMgr metainfo $ resPeers resp
+        Right resp -> do
+            forkProcess node $ void $ do
+                spawnLocal $ runPieceMgr metainfo
+                spawnLocal $ runPeerMgr metainfo $ resPeers resp
         Left e -> fail $ "Failed to parse bencode file: " ++ e
 
     -- Download!
