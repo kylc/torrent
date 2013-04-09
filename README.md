@@ -14,4 +14,6 @@ Installation
 Running
 -------
 
-    $ dist/build/torrent/torrent <file.torrent>
+    $ wget http://releases.ubuntu.com/12.10/ubuntu-12.10-desktop-amd64.iso.torrent
+    $ dist/build/torrent/torrent ubuntu-12.10-desktop-amd64.iso.torrent
+
