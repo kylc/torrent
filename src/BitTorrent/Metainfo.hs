@@ -3,6 +3,7 @@ module BitTorrent.Metainfo
     , Metainfo(..)
     , MetainfoFile(..)
     , readMetainfo
+    , pieceCount
     ) where
 
 import Control.Applicative
@@ -35,3 +36,6 @@ readPieces b
 -- TODO: Write this
 readFiles :: Bencode -> Maybe [MetainfoFile]
 readFiles = undefined
+
+pieceCount :: Metainfo -> Int
+pieceCount = length . mtPieces

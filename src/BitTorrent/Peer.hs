@@ -19,6 +19,7 @@ import qualified Network.Socket as N
 import qualified System.IO.Streams as Streams
 import qualified System.IO.Streams.Attoparsec as Streams
 
+import BitTorrent.Metainfo
 import BitTorrent.Types
 
 runPeer :: Metainfo -> Peer -> Process ()
@@ -27,7 +28,6 @@ runPeer meta peer = do
     conn <- spawnLocal $ runPeerConnection meta peer pid
     go $ defaultPeerState $ pieceCount meta
   where
-    pieceCount = length . mtPieces
     go :: PeerState -> Process ()
     go st = do
       m <- expect :: Process ProcMessage
