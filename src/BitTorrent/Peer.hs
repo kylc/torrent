@@ -25,17 +25,16 @@ runPeer :: Metainfo -> Peer -> Process ()
 runPeer meta peer = do
     pid <- getSelfPid
     conn <- spawnLocal $ runPeerConnection meta peer pid
-
-    forever $ do
-        let pieceCount = length . mtPieces $ meta
-            state = defaultPeerState pieceCount
-        flip evalStateT state $ do
-            m <- lift $ (expect :: Process ProcMessage)
-            case m of
-                PeerRecv msg -> handleMessage pieceCount msg
-                PeerFetch i -> lift $ say $ "Fetcing " ++ show i
-
-            -- lift $ say $ "Received message: " ++ show m
+    go $ defaultPeerState $ pieceCount meta
+  where
+    pieceCount = length . mtPieces
+    go :: PeerState -> Process ()
+    go st = do
+      m <- expect :: Process ProcMessage
+      newst <- case m of
+                   PeerRecv msg -> handleMessage (pieceCount meta) msg st
+                   PeerFetch i -> return st
+      go newst
 
 runPeerConnection :: Metainfo -> Peer -> ProcessId -> Process ()
 runPeerConnection meta peer pid = do
@@ -108,19 +107,20 @@ parseHandshake =
     Handshake <$> (A.anyWord8 >>= A.take . fromIntegral)
               <*> A.take 8 <*> A.take 20 <*> A.take 20
 
-handleMessage :: Int -> PeerMessage -> StateT PeerState Process ()
-handleMessage pieceCount m =
+handleMessage :: Int -> PeerMessage -> PeerState -> Process PeerState
+handleMessage pieceCount m st =
     case m of
-        KeepAlive -> return () -- TODO: Send KeepAlive back
-        Handshake {} -> return () -- TODO: Verify data
-        Choke -> modify $ \s -> s { peerChoked = True }
-        Unchoke -> modify $ \s -> s { peerChoked = False }
-        Interested -> modify $ \s -> s { peerInterested = True }
-        NotInterested -> modify $ \s -> s { peerInterested = False }
-        Have x -> lift $ do
+        KeepAlive -> return st -- TODO: Send KeepAlive back
+        Handshake {} -> return st -- TODO: Verify data
+        Choke -> return st { peerChoked = True }
+        Unchoke -> return st { peerChoked = False }
+        Interested -> return st { peerInterested = True }
+        NotInterested -> return st { peerInterested = False }
+        Have x -> do
             pid <- getSelfPid
             nsend "db_updater" (pid, PeerHas x)
-        Bitfield x -> lift $ do
+            return st
+        Bitfield x -> do
             let changes = readBitfield pieceCount x
             forM_ changes $ \(x, b) ->
               if b
@@ -128,6 +128,7 @@ handleMessage pieceCount m =
                     pid <- getSelfPid
                     nsend "db_updater" (pid, PeerHas x)
                 else return ()
+            return st
 
 -- TODO: This works (I think), but it's pretty terrible.
 readBitfield :: Int -> B.ByteString -> [(Int, Bool)]
