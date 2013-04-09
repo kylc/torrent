@@ -21,10 +21,3 @@ runPeerMgr m ps = do
     liftIO $ delaySeconds 3
 
     -- TODO: Watch peer processes, restarting if necessary
-
--- TODO: Move this to piece manager
-emptyPieces :: [PieceState] -> [PieceState]
-emptyPieces = filter $ \x ->
-    case x of
-        PieceEmpty -> False
-        _ -> True
