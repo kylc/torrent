@@ -25,7 +25,7 @@ runPieceMgr m = do
     fetchPieces pieceCount mdb
 
 fetchPieces :: Int -> MVar (Array Int [ProcessId]) -> Process ()
-fetchPieces pieceCount mdb = do
+fetchPieces pieceCount mdb =
     -- Iterate linearly over all pieces
     forM_ [0..(pieceCount - 1)] $ \i -> do
         say $ "Downloading piece " ++ show i ++ "/" ++ show pieceCount
@@ -42,7 +42,7 @@ fetchPieces pieceCount mdb = do
 
 runDbUpdater :: MVar (Array Int [ProcessId]) -> Process ()
 runDbUpdater mdb = do
-    (pid, (PeerHas n)) <- expect :: Process (ProcessId, ProcMessage)
+    (pid, PeerHas n) <- expect :: Process (ProcessId, ProcMessage)
     liftIO $ modifyMVar_ mdb $ \v -> return $ updateDb v pid n
     runDbUpdater mdb
 

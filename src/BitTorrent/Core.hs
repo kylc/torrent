@@ -46,7 +46,7 @@ run f = do
 
     -- Connect to peers
     case resp of
-        Right resp -> do
+        Right resp ->
             forkProcess node $ void $ do
                 spawnLocal $ runPieceMgr metainfo
                 spawnLocal $ runPeerMgr metainfo $ resPeers resp
