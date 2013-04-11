@@ -123,11 +123,9 @@ handleMessage pieceCount m st =
         Bitfield x -> do
             let changes = readBitfield pieceCount x
             forM_ changes $ \(x, b) ->
-              if b
-                then do
-                    pid <- getSelfPid
-                    nsend "db_updater" (pid, PeerHas x)
-                else return ()
+              when b $ do
+                pid <- getSelfPid
+                nsend "db_updater" (pid, PeerHas x)
             return st
 
 -- TODO: This works (I think), but it's pretty terrible.
