@@ -23,8 +23,4 @@ executable torrent
                    , attoparsec
                    , attoparsec-binary
                    , io-streams
-                   , distributed-process
-                   , network-transport-tcp
-                   , binary >=0.6.3
-                   , array
-                   , mtl
+                   , hslogger
