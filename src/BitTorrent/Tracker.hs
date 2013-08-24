@@ -1,12 +1,10 @@
 module BitTorrent.Tracker
     ( request
+    , makeRequest
     ) where
 
 import Control.Lens
 import Data.Bits
-import Data.Char (intToDigit, ord)
-import Data.List (intercalate)
-import qualified Data.Map as Map
 import Data.Maybe (fromJust)
 import Data.Word
 
@@ -29,17 +27,30 @@ request req = do
   where
     url = req ^. announce ++ "?" ++ requestParams req
 
+makeRequest :: Metainfo -> TrackerRequest
+makeRequest metainfo = TrackerRequest
+    { _reqAnnounce = metainfo ^. announce
+    , _reqInfoHash = metainfo ^. infoHash
+    , _reqPeerId = "abcdefghijklmnopqrst"
+    , _reqIp = "0.0.0.0"
+    , _reqPort = 5555
+    , _reqUploaded = 0
+    , _reqDownloaded = 0
+    , _reqLeft = 0
+    , _reqEvent = Started
+    , _reqCompact = 1
+    }
+
 readBody :: String -> Either String TrackerResponse
-readBody body =
-    case parseBencode (B8.pack body) of
-        Right bcode ->
-            case lookupString "peers" bcode of
-                Just cmp ->
-                    Right TrackerResponse { _resInterval = fromIntegral . fromJust$ lookupInt "interval" bcode
-                                          , _resPeers = decodePeers cmp
-                                          }
-                Nothing -> Left "Failed to find compact peer data"
-        Left e -> fail $ "Failed to parse bencode: " ++ e
+readBody body = do
+    bcode <- parseBencode $ B8.pack body
+    interval <- case lookupInt "interval" bcode of
+                  Just i -> Right $ fromIntegral i
+                  Nothing -> Left "No interval key in tracker response"
+    peers <- case lookupString "peers" bcode of
+                  Just p -> Right $ decodePeers p
+                  Nothing -> Left "No peers key in tracker response"
+    return $ TrackerResponse interval peers
 
 
 requestParams :: TrackerRequest -> String

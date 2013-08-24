@@ -6,6 +6,7 @@
 
 module BitTorrent.Types where
 
+import Control.Concurrent.MVar
 import Control.Lens
 import Data.Word
 
@@ -73,3 +74,7 @@ data TrackerResponse = TrackerResponse
 makeFields ''TrackerResponse
 
 data PieceState = PieceDone | PieceStarted | PieceEmpty
+
+data Download = Download
+    { _dlTrackerResponse :: MVar TrackerResponse
+    }

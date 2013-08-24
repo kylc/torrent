@@ -16,21 +16,6 @@ import BitTorrent.Metainfo
 import BitTorrent.Tracker
 import BitTorrent.Types
 
--- TODO: Send some real values here
-makeTrackerRequest :: Metainfo -> TrackerRequest
-makeTrackerRequest metainfo = TrackerRequest
-    { _reqAnnounce = metainfo ^. announce
-    , _reqInfoHash = metainfo ^. infoHash
-    , _reqPeerId = "abcdefghijklmnopqrst"
-    , _reqIp = "0.0.0.0"
-    , _reqPort = 5555
-    , _reqUploaded = 0
-    , _reqDownloaded = 0
-    , _reqLeft = 0
-    , _reqEvent = Started
-    , _reqCompact = 1
-    }
-
 run :: String -> IO ()
 run f = do
     infoM "BitTorrent.Core" $ "Downloading " ++ f
@@ -40,13 +25,20 @@ run f = do
 
     trackerResponse <- newEmptyMVar
 
+    let download = Download trackerResponse
+
     -- Request tracker information
     let metainfo = fromJust $ readMetainfo b
-        req = makeTrackerRequest metainfo
+        req = makeRequest metainfo
 
     infoM "BitTorrent.Core" $ "Making tracker request to " ++ metainfo ^. announce
-    request req >>= putMVar trackerResponse
-    infoM "BitTorrent.Core" $ "Received tracker response"
+
+    response <- request req
+    case response of
+        Right r -> putMVar trackerResponse r
+        Left e -> errorM "BitTorrent.Core" e
+
+    infoM "BitTorrent.Core" "Received tracker response"
 
     -- Connect to peers
 
