@@ -78,3 +78,5 @@ data PieceState = PieceDone | PieceStarted | PieceEmpty
 data Download = Download
     { _dlTrackerResponse :: MVar TrackerResponse
     }
+
+makeFields ''Download
