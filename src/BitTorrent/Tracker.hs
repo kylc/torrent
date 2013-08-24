@@ -2,6 +2,7 @@ module BitTorrent.Tracker
     ( request
     ) where
 
+import Control.Lens
 import Data.Bits
 import Data.Char (intToDigit, ord)
 import Data.List (intercalate)
@@ -11,7 +12,7 @@ import Data.Word
 
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as B8
-import Network.HTTP
+import Network.HTTP hiding (port)
 
 import BitTorrent.Bencode
 import BitTorrent.Metainfo
@@ -26,7 +27,7 @@ request req = do
         (2, _, _) -> return $ readBody body
         (_, _, _) -> return . Left $ "Unexpected tracker response code: " ++ show code
   where
-    url = reqAnnounce req ++ "?" ++ requestParams req
+    url = req ^. announce ++ "?" ++ requestParams req
 
 readBody :: String -> Either String TrackerResponse
 readBody body =
@@ -34,8 +35,8 @@ readBody body =
         Right bcode ->
             case lookupString "peers" bcode of
                 Just cmp ->
-                    Right TrackerResponse { resInterval = fromIntegral . fromJust$ lookupInt "interval" bcode
-                                          , resPeers = decodePeers cmp
+                    Right TrackerResponse { _resInterval = fromIntegral . fromJust$ lookupInt "interval" bcode
+                                          , _resPeers = decodePeers cmp
                                           }
                 Nothing -> Left "Failed to find compact peer data"
         Left e -> fail $ "Failed to parse bencode: " ++ e
@@ -43,15 +44,15 @@ readBody body =
 
 requestParams :: TrackerRequest -> String
 requestParams req = urlEncodeVars
-    [ ("info_hash", B8.unpack $ reqInfoHash req)
-    , ("peer_id", reqPeerId req)
-    , ("ip", reqIp req)
-    , ("port", show $ reqPort req)
-    , ("uploaded", show $ reqUploaded req)
-    , ("downloaded", show $ reqDownloaded req)
-    , ("left", show $ reqLeft req)
-    , ("event", show $ reqEvent req)
-    , ("compact", show $ reqCompact req)
+    [ ("info_hash", B8.unpack $ req ^. infoHash)
+    , ("peer_id", req ^. peerId)
+    , ("ip", req ^. ip)
+    , ("port", show $ req ^. port)
+    , ("uploaded", show $ req ^. uploaded)
+    , ("downloaded", show $ req ^. downloaded)
+    , ("left", show $ req ^. left)
+    , ("event", show $ req ^. event)
+    , ("compact", show $ req ^. compact)
     ]
 
 decodePeers :: B.ByteString -> [Peer]

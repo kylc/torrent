@@ -24,3 +24,4 @@ executable torrent
                    , attoparsec-binary
                    , io-streams
                    , hslogger
+                   , lens

@@ -8,6 +8,7 @@ module BitTorrent.Metainfo
 
 import Control.Applicative
 import qualified Data.Map as Map
+import Control.Lens
 
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as B8
@@ -38,4 +39,4 @@ readFiles :: Bencode -> Maybe [MetainfoFile]
 readFiles = undefined
 
 pieceCount :: Metainfo -> Int
-pieceCount = length . mtPieces
+pieceCount = length . view pieces
